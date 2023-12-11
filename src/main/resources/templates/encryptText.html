@@ -13,7 +13,7 @@
   <link id="original" rel=stylesheet href="/static/css/original_2.css" type="text/css" th:href="@{/css/original_2.css}">
 </head>
 <body>
-<form class="container-fluid" action="/encryptText">
+<form class="container-fluid" action="/encryptText" method="post">
   <div class="row" id="form_textEncrypt">
     <div class="col-4">
       <label>Текст для шифрования:</label>
@@ -25,6 +25,7 @@
       <button class="btn btn-light" type="submit" id="b_textEncrypt">Зашифровать</button>
     </div>
   </div>
+  <th:block th:insert="~{blocks/footerBlock :: footer}"></th:block>
 </form>
 </body>
 </html>

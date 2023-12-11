@@ -13,18 +13,21 @@
   <link id="original" rel=stylesheet href="/static/css/original_2.css" type="text/css" th:href="@{/css/original_2.css}">
 </head>
 <body>
-<form class="container-fluid" action="/">
+<form class="container-fluid" action="/encryptFile" method="post" enctype="multipart/form-data">
   <div class="row" id="form_fileEncrypt">
     <div class="col-4">
       <label>Файл для шифрования:</label>
     </div>
     <div class="col-4">
-      <input type="file" placeholder="" class="form-control" id="fileEncrypt" required>
+      <input type="file" placeholder="" class="form-control" id="file" name="file" required>
     </div>
     <div class="col-4">
       <button class="btn btn-light" type="submit" id="b_fileEncrypt">Зашифровать</button>
     </div>
   </div>
+  <p th:if="${param.process}" style="color: greenyellow;">Файл успешно закодирован</p>
+  <p th:if="${param.error}" style="color: red;">Произошла ошибка кодирования файла</p>
+  <th:block th:insert="~{blocks/footerBlock :: footer}"></th:block>
 </form>
 </body>
 </html>

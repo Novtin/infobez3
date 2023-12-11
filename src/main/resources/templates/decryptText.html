@@ -13,24 +13,20 @@
   <link id="original" rel=stylesheet href="/static/css/original_2.css" type="text/css" th:href="@{/css/original_2.css}">
 </head>
 <body>
-<form class="container-fluid" action="/decryptText">
+<form class="container-fluid" action="/decryptText" method="post">
   <div class="row" id="form_textDecrypt">
     <div class="col-4">
       <label>Текст для расшифрования:</label>
     </div>
     <div class="col-4">
-      <input type="text" placeholder="Текст" class="form-control" id="textDecrypt" name="textDecrypt" maxlength="3000" required>
+      <input type="text" placeholder="Текст" class="form-control" id="textDecrypt" pattern="-?\d+(,-?\d+)*"
+             title="Пожалуйста, вводите только числа через запятую" name="sourceText" maxlength="3000" required>
     </div>
     <div class="col-4">
-      <button class="btn btn-light" type="submit" id="b_textDecrypt">Зашифровать</button>
-    </div>
-    <div class="row">
-      <div class="col-4 scroll" th:if="${sourceText != null}" th:value="${'Исходный текст: ' + sourceText}"></div>
-    </div>
-    <div class="row">
-      <div class="col-4 scroll" th:if="${decryptText != null}" th:value="${'Зашифрованный текст: ' + decryptText}"></div>
+      <button class="btn btn-light" type="submit" id="b_textDecrypt">Расшифровать</button>
     </div>
   </div>
+  <th:block th:insert="~{blocks/footerBlock :: footer}"></th:block>
 </form>
 </body>
 </html>

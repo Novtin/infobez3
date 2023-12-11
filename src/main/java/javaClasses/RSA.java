@@ -1,5 +1,8 @@
 package javaClasses;
 
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -7,7 +10,9 @@ import java.util.List;
 import java.util.Random;
 
 public class RSA {
-    private static final int blockBytes = 15;
+    private static final int encryptBlockFile = 14;
+    private static final int decryptBlockFile = 17;
+    private static final int blockReadText = 15;
     public static BigInteger randBetween(BigInteger min, BigInteger max) {
         Random rand = new Random();
         BigInteger range = max.subtract(min).add(BigInteger.ONE);
@@ -87,8 +92,8 @@ public class RSA {
         BigInteger e = findModularInverse(s, d);
         System.out.println("E: " + e);
         assert e != null;
-        BigInteger result = s.mod(d).multiply(e.mod(d)).mod(d);
-        System.out.println("E * S mod N  = " + result);
+        BigInteger result = (s.multiply(e)).mod(d);
+        System.out.println("E * S mod D  = " + result);
         List<BigInteger> keys = new ArrayList<>();
         keys.add(e);
         keys.add(s);
@@ -96,55 +101,41 @@ public class RSA {
         return keys;
     }
 
-    public static List<List<BigInteger>> encryptBlocks(List<List<Byte>> blocks, BigInteger s, BigInteger n) {
-        List<List<BigInteger>> blocksCoded = new ArrayList<>();
-
-        for (List<Byte> element : blocks) {
-            List<BigInteger> oneBlock = new ArrayList<>();
-
-            for (Byte el : element) {
-                oneBlock.add(new BigInteger(String.valueOf(el)).modPow(s, n));
+    public static List<BigInteger> encryptBlocks(List<List<Byte>> blocks, BigInteger s, BigInteger n) {
+        List<BigInteger> blocksCoded = new ArrayList<>();
+        for (List<Byte> list : blocks) {
+            byte[] byteArray = new byte[list.size()];
+            for (int i = 0; i < list.size(); i++) {
+                byteArray[i] = list.get(i);
             }
-
-            blocksCoded.add(oneBlock);
+            BigInteger value = new BigInteger(1, byteArray);
+            value = value.modPow(s, n);
+            blocksCoded.add(value);
         }
         return blocksCoded;
     }
 
-    public static List<List<BigInteger>> decryptBlocks(List<List<BigInteger>> blocks, BigInteger e, BigInteger n) {
-        List<List<BigInteger>> blocksCoded = new ArrayList<>();
-
-        for (List<BigInteger> element : blocks) {
-            List<BigInteger> oneBlock = new ArrayList<>();
-
-            for (BigInteger el : element) {
-                oneBlock.add(el.modPow(e, n));
-            }
-
-            blocksCoded.add(oneBlock);
+    public static List<BigInteger> decryptBlocks(List<BigInteger> blocks, BigInteger e, BigInteger n) {
+        List<BigInteger> blocksCoded = new ArrayList<>();
+        for (BigInteger element : blocks) {
+            element = element.modPow(e, n);
+            byte[] bytes = deleteStartZero(element.toByteArray());
+            blocksCoded.add(new BigInteger(bytes));
         }
         return blocksCoded;
     }
 
-    public static List<List<Byte>> makeByteBlocks(byte[] textBytes) {
+    public static List<List<Byte>> makeByteBlocks(byte[] textBytes, int size) {
         List<List<Byte>> blocks = new ArrayList<>();
         int i = 0;
 
         while (i < textBytes.length) {
-            int end = i + blockBytes;
-            if (end > textBytes.length) {
-                end = textBytes.length;
-            }
+            int end = Math.min(i + size, textBytes.length);
             List<Byte> block = new ArrayList<>();
 
             for (int j = i; j < end; j++) {
                 block.add(textBytes[j]);
             }
-
-            while (block.size() < 15) {
-                block.add((byte) 0);
-            }
-
             blocks.add(block);
             i = end;
         }
@@ -152,22 +143,23 @@ public class RSA {
         return blocks;
     }
 
-    public static List<List<BigInteger>> encryptText(String plainText, BigInteger s, BigInteger n) {
+    public static List<BigInteger> encryptText(String plainText, BigInteger s, BigInteger n) {
         byte[] textBytes = plainText.getBytes(StandardCharsets.UTF_8);
-        return encryptBlocks(makeByteBlocks(textBytes), s, n);
+        return encryptBlocks(makeByteBlocks(textBytes, blockReadText), s, n);
     }
 
-    public static String decryptText(List<List<BigInteger>> blocksCoded, BigInteger e, BigInteger n) {
-        List<List<BigInteger>> blocksDecoded = decryptBlocks(blocksCoded, e, n);
-        System.out.println(blocksDecoded);
+    public static String decryptText(List<BigInteger> blocksCoded, BigInteger e, BigInteger n) {
+        List<BigInteger> blocksDecoded = decryptBlocks(blocksCoded, e, n);
+        byte[] listByte = listBigIntToBytes(blocksDecoded);
+        return new String(listByte, StandardCharsets.UTF_8);
+    }
+
+    public static byte[] listBigIntToBytes(List<BigInteger> bigIntegerList){
         List<byte[]> resultByte = new ArrayList<>();
-        for (List<BigInteger> list : blocksDecoded) {
-            for (BigInteger value : list) {
-                resultByte.add(value.toByteArray());
-            }
+        for (BigInteger value : bigIntegerList) {
+            resultByte.add(value.toByteArray());
         }
         List<Byte> oneList = new ArrayList<>();
-        System.out.println(resultByte);
         for (byte[] el: resultByte) {
             for (byte element: el) {
                 oneList.add(element);
@@ -177,30 +169,129 @@ public class RSA {
         for (int i = 0; i < oneList.size(); i++){
             listByte[i] = oneList.get(i);
         }
-        for (int i = listByte.length - 1; i > 0; i--){
-            if (listByte[i] != (byte) 0){
-                byte[] result = new byte[i + 1];
-                System.arraycopy(listByte, 0, result, 0, i + 1);
-                return new String(result);
-            }
-        }
-        return String.valueOf((byte) 0);
+        return listByte;
     }
 
-    public static List<List<BigInteger>> makeIntBlocks(String textInput){
-        String[] listText = textInput.split(",");
-        List<BigInteger> listBigInt = new ArrayList<>();
-        for (String str: listText) {
-            listBigInt.add(new BigInteger(str));
-        }
-        List<List<BigInteger>> blocks = new ArrayList<>();
-        for (int i = 0; i < listBigInt.size(); i += blockBytes){
-            blocks.add(listBigInt.subList(i, i + blockBytes));
-            while (blocks.get(blocks.size() - 1).size() < 15){
-                blocks.get(blocks.size() - 1).add(new BigInteger(String.valueOf(0)));
+    public static boolean checkAllZerosAndOne(byte[] bytes){
+        for (int i = 0; i < bytes.length; i++){
+            if (i == bytes.length - 1 && bytes[i] == (byte) 1){
+                return true;
+            }
+            if (bytes[i] != (byte) 0){
+                return false;
             }
         }
-        return blocks;
+        return true;
     }
 
+    public static byte[] encryptFileBlock(byte[] bytes, BigInteger s, BigInteger n){
+        int countZeros = 0;
+        for (byte element: bytes){
+            if (element == (byte) 0){
+                countZeros++;
+            } else {
+                break;
+            }
+        }
+        BigInteger value = new BigInteger(1, bytes);
+        value = value.modPow(s, n);
+        byte[] valueBytes = value.toByteArray();
+        byte[] result = new byte[valueBytes.length + 1];
+        System.arraycopy(valueBytes, 0, result, 0, valueBytes.length);
+        result[result.length - 1] = (byte) countZeros;
+        if (result.length < decryptBlockFile){
+            byte[] newBytes = new byte[decryptBlockFile];
+            System.arraycopy(result, 0, newBytes, newBytes.length - result.length, result.length);
+            result = newBytes;
+        }
+        return result;
+    }
+
+    public static byte[] decryptFileBlock(byte[] bytes, BigInteger e, BigInteger n){
+        int countZeros = bytes[bytes.length - 1];
+        byte[] newBytes = new byte[bytes.length - 1];
+        System.arraycopy(bytes, 0, newBytes, 0, bytes.length - 1);
+        BigInteger value = new BigInteger(newBytes);
+        value = value.modPow(e, n);
+        byte[] valueBytes = deleteStartZero(value.toByteArray());
+        if (countZeros > 0){
+            newBytes = new byte[countZeros + valueBytes.length];
+            System.arraycopy(valueBytes, 0, newBytes, countZeros, valueBytes.length);
+            valueBytes = newBytes;
+        }
+        return valueBytes;
+    }
+
+    public static byte[] deleteStartZero(byte[] bytes){
+        if (bytes.length > 1 && bytes[0] == (byte) 0 && bytes[1] < (byte) 0){
+            byte[] valueBytesWithoutZero = new byte[bytes.length - 1];
+            System.arraycopy(bytes, 1, valueBytesWithoutZero, 0, bytes.length - 1);
+            bytes = valueBytesWithoutZero;
+        }
+        return bytes;
+    }
+
+    public static int encryptFile(MultipartFile fileInput, BigInteger s, BigInteger n, File fileOutput) {
+        try (
+                InputStream inputStream = fileInput.getInputStream();
+                FileOutputStream outputStream = new FileOutputStream(fileOutput, true)
+        ) {
+            byte[] buffer = new byte[Math.min(inputStream.available(), encryptBlockFile)];
+            while (inputStream.read(buffer) != -1) {
+                if (buffer.length < encryptBlockFile && checkAllZerosAndOne(buffer)){
+                    outputStream.write(buffer, 0, buffer.length);
+                    break;
+                }
+                if (checkAllZerosAndOne(buffer)){
+                    byte[] newBuffer = new byte[decryptBlockFile];
+                    System.arraycopy(buffer, 0, newBuffer, 3, buffer.length);
+                    outputStream.write(newBuffer, 0, newBuffer.length);
+                } else {
+                    byte[] bytes = encryptFileBlock(buffer, s, n);
+                    outputStream.write(bytes, 0, bytes.length);
+                }
+                buffer = new byte[Math.min(inputStream.available(), encryptBlockFile)];
+                if (buffer.length == 0){
+                    break;
+                }
+            }
+        } catch (IOException exception) {
+            exception.printStackTrace();
+            return 0;
+        }
+        return 1;
+    }
+
+    public static int decryptFile(MultipartFile fileInput, BigInteger e, BigInteger n, File fileOutput) {
+        try (
+                InputStream inputStream = fileInput.getInputStream();
+                FileOutputStream outputStream = new FileOutputStream(fileOutput, true)
+        ) {
+            byte[] buffer = new byte[decryptBlockFile];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                if (bytesRead < decryptBlockFile){
+                    byte[] newBytes = new byte[bytesRead];
+                    System.arraycopy(buffer, 0, newBytes, 0, bytesRead);
+                    if (checkAllZerosAndOne(newBytes)) {
+                        outputStream.write(newBytes, 0, bytesRead);
+                        break;
+                    }
+                }
+                if (checkAllZerosAndOne(buffer)){
+                    byte[] newBuffer = new byte[encryptBlockFile];
+                    System.arraycopy(buffer, 3, newBuffer, 0, buffer.length - 3);
+                    outputStream.write(newBuffer, 0, newBuffer.length);
+                } else {
+                    byte[] result = decryptFileBlock(buffer, e, n);
+                    outputStream.write(result, 0, result.length);
+                }
+                buffer = new byte[decryptBlockFile];
+            }
+        } catch (IOException exception) {
+            exception.printStackTrace();
+            return 0;
+        }
+        return 1;
+    }
 }
