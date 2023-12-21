@@ -38,6 +38,13 @@ public class Client {
     public void setPassword(String password) {
         this.password = password;
     }
+    public Client(String login, String password){
+        this.login = login;
+        this.password = password;
+    }
+
+    public Client(){}
+
 
     @Override
     public boolean equals(Object o) {

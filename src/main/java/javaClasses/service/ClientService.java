@@ -60,4 +60,8 @@ public class ClientService {
         clientRepository.save(client);
         return true;
     }
+
+    public void saveAdmin(Client client){
+        clientRepository.save(client);
+    }
 }

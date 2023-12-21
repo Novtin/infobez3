@@ -27,7 +27,7 @@ public class MenuController {
     @GetMapping("/")
     public String showMenu(HttpServletRequest request) {
         HttpSession session = request.getSession();
-        if((Client) session.getAttribute("user") != null) {
+        if(session.getAttribute("user") != null) {
             return "index";
         } else {
             System.out.println("Клиента нет в сессии");
@@ -38,7 +38,7 @@ public class MenuController {
     @GetMapping("/table")
     public String showTable(Model model, HttpServletRequest request) {
         HttpSession session = request.getSession();
-        if((Client) session.getAttribute("user") != null) {
+        if(session.getAttribute("user") != null) {
             model.addAttribute("humanList", humanService.show());
             return "table";
         } else {
@@ -50,26 +50,32 @@ public class MenuController {
     @PostMapping("/delete/{id}")
     public String delete(@PathVariable Integer id, HttpServletRequest request){
         HttpSession session = request.getSession();
-        if((Client) session.getAttribute("user") != null) {
+        if(session.getAttribute("admin") != null) {
             if (humanService.delete(id) == 0) {
                 System.out.println("Ошибка удаления");
             }
             return "index";
-        } else {
+        } else if (session.getAttribute("user") == null) {
             System.out.println("Клиента нет в сессии");
             return "redirect:/user/login";
+        } else {
+            System.out.println("Админа нет в сессии");
+            return "redirect:/menu/";
         }
     }
 
     @GetMapping("/save")
     public String saveGet(Model model, HttpServletRequest request) {
         HttpSession session = request.getSession();
-        if((Client) session.getAttribute("user") != null) {
+        if(session.getAttribute("admin") != null) {
             model.addAttribute("human", new Human());
             return "save";
-        } else {
+        } else if (session.getAttribute("user") == null) {
             System.out.println("Клиента нет в сессии");
             return "redirect:/user/login";
+        } else {
+            System.out.println("Админа нет в сессии");
+            return "redirect:/menu/";
         }
     }
 

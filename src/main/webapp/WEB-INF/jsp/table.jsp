@@ -19,18 +19,31 @@
                 <td>№</td>
                 <td>Имя</td>
                 <td>Фамилия</td>
+                <%
+                    Object admin = session.getAttribute("admin");
+                    if (admin != null) {
+                %>
                 <td>Действие</td>
+                <%
+                    }
+                %>
             </tr>
-            <c:forEach var="human" items="${humanList}">
+            <c:forEach var="human" items="${humanList}" varStatus="loop">
                 <tr>
-                    <td>${human.id}</td>
+                    <td>${loop.index + 1}</td>
                     <td>${human.name}</td>
                     <td>${human.surname}</td>
+                    <%
+                        if (admin != null) {
+                    %>
                     <td>
                         <form:form method="post" action="${pageContext.request.contextPath}/menu/delete/${human.id}">
                             <button type="submit" class="btn btn-light">Удалить</button>
                         </form:form>
                     </td>
+                    <%
+                        }
+                    %>
                 </tr>
             </c:forEach>
         </table>

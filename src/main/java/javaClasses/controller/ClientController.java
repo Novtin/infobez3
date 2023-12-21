@@ -12,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigInteger;
+import java.util.Objects;
 
 @Controller
 @RequestMapping("/user")
@@ -32,6 +33,9 @@ public class ClientController {
         this.secretKeyServer = DiffieHellman.getSecretKey();
         this.openKeyServer = DiffieHellman.getOpenKey(P, G, secretKeyServer);
         System.out.println("openKeyServer: " + openKeyServer);
+        Client client = new Client(DiffieHellman.hashMessage("admin"),
+                DiffieHellman.hashMessage("admin"));
+        this.clientService.saveAdmin(client);
     }
 
 
@@ -66,6 +70,9 @@ public class ClientController {
         if (clientInput != null){
             HttpSession session = request.getSession();
             session.setAttribute("user", clientInput);
+            if (DiffieHellman.checkMessage("admin", clientInput.getLogin())){
+                session.setAttribute("admin", true);
+            }
             return "redirect:/menu/";
         } else {
             return "redirect:/user/login?error=true";
@@ -88,6 +95,9 @@ public class ClientController {
     public String logout(HttpServletRequest request) {
         HttpSession session = request.getSession();
         session.removeAttribute("user");
+        if (session.getAttribute("admin") != null){
+            session.removeAttribute("admin");
+        }
         return "redirect:/user/login?logout";
     }
 }

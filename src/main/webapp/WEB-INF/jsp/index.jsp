@@ -1,3 +1,4 @@
+<%@ page import="java.util.Optional" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <!DOCTYPE html>
 <html lang="en">
@@ -13,8 +14,15 @@
 <body>
     <h2>Меню</h2>
     <ol>
-        <li><a href="${pageContext.request.contextPath}/menu/save">Добавить элемент</a></li>
         <li><a href="${pageContext.request.contextPath}/menu/table">Вывести все элементы</a></li>
+            <%
+                Object admin = session.getAttribute("admin");
+                if (admin != null) {
+            %>
+        <li><a href="${pageContext.request.contextPath}/menu/save">Добавить элемент</a></li>
+            <%
+                }
+            %>
     </ol>
     <a href="${pageContext.request.contextPath}/menu/profile" style="font-size: smaller">Перейти в профиль</a>
 </body>
